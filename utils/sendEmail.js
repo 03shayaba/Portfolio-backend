@@ -4,23 +4,21 @@ const sendEmail = async ({ name, email, descriptionMessage }) => {
     // Create a transporter
 
      const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+     host: "smtp-relay.brevo.com",
       port: 587,
       secure: false, // TLS
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS,
       },
-      tls: {
-        rejectUnauthorized: false
-      }
+    
     });
 
     // Define email options
     const mailOptions = {
-      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
+      from: `"Portfolio Contact" <${process.env.SENDER_EMAIL}>`,
       replyTo: email,
-      to: process.env.EMAIL_USER,
+      to: process.env.RECEIVER_EMAIL,
       subject: ` New Message from Portfolio`,
       html: `
     <div style="max-width:600px;margin:auto;font-family:Arial;">
@@ -38,7 +36,10 @@ const sendEmail = async ({ name, email, descriptionMessage }) => {
     };
     // Send email
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(info);
+    console.log("Email sent: " + info.response);
+
   } catch (err) {
     console.log("Error in sendEmail util", err);
   }
