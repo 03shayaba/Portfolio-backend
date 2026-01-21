@@ -1,47 +1,51 @@
-const nodemailer = require("nodemailer");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
+
 const sendEmail = async ({ name, email, descriptionMessage }) => {
   try {
-    // Create a transporter
+    const client = SibApiV3Sdk.ApiClient.instance;
+    const apiKey = client.authentications["api-key"];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
 
-     const transporter = nodemailer.createTransport({
-     host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false, // TLS
-      auth: {
-        user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
-      },
-    
-    });
+    const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
-    // Define email options
-    const mailOptions = {
-      from: `"Portfolio Contact" <${process.env.SENDER_EMAIL}>`,
-      replyTo: email,
-      to: process.env.RECEIVER_EMAIL,
-      subject: ` New Message from Portfolio`,
-      html: `
-    <div style="max-width:600px;margin:auto;font-family:Arial;">
-      <h2 style="background:#4CAF50;color:white;padding:10px;">
-        New Contact Form Submission
-      </h2>
-      <div style="padding:15px;">
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b></p>
-        <p style="background:#f4f4f4;padding:10px;">${descriptionMessage}</p>
-      </div>
-    </div>
-  `,
+    const sender = {
+      email: process.env.BREVO_SENDER_EMAIL,
+      name: process.env.BREVO_SENDER_NAME || "Portfolio Contact",
     };
-    // Send email
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(info);
-    console.log("Email sent: " + info.response);
+    const receivers = [
+      {
+        email: process.env.BREVO_SENDER_EMAIL, // tumhe khud ko mail
+      },
+    ];
 
+    const emailData = {
+      sender,
+      to: receivers,
+      replyTo: {
+        email,
+        name,
+      },
+      subject: "New Message from Portfolio",
+      htmlContent: `
+        <div style="max-width:600px;margin:auto;font-family:Arial;">
+          <h2 style="background:#4CAF50;color:white;padding:10px;">
+            New Contact Form Submission
+          </h2>
+          <div style="padding:15px;">
+            <p><b>Name:</b> ${name}</p>
+            <p><b>Email:</b> ${email}</p>
+            <p><b>Message:</b></p>
+            <p style="background:#f4f4f4;padding:10px;">${descriptionMessage}</p>
+          </div>
+        </div>
+      `,
+    };
+
+    const response = await tranEmailApi.sendTransacEmail(emailData);
+    console.log("Brevo API email sent:", response.messageId);
   } catch (err) {
-    console.log("Error in sendEmail util", err);
+    console.error("Error in Brevo API sendEmail:", err?.response?.body || err);
   }
 };
 
